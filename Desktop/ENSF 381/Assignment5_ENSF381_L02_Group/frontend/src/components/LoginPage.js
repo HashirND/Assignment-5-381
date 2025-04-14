@@ -32,6 +32,9 @@ const LoginPage = () => {
             LMS Student Login
           </h2>
           <LoginForm />
+          <p style={{ textAlign: 'center', marginTop: '15px' }}>
+            Don’t have an account? <a href="/signup">Sign up here</a>
+          </p>
         </div>
       </main>
 

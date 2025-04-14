@@ -3,46 +3,49 @@ import Header from './Header';
 import Footer from './Footer';
 import CourseItem from './CourseItem';
 import EnrollmentList from './EnrollmentList';
-import courses from '../data/courses';
 
 const CoursesPage = () => {
-  const [enrolledCourses, setEnrolledCourses] = useState(() => {
-    const saved = localStorage.getItem('enrollments');
-    return saved ? JSON.parse(saved) : [];
-  });
+  const [courses, setCourses] = useState([]);
+  const [enrolledCourses, setEnrolledCourses] = useState([]);
+  const studentId = localStorage.getItem('student_id');
 
-  // Save to localStorage
   useEffect(() => {
-    localStorage.setItem('enrollments', JSON.stringify(enrolledCourses));
-  }, [enrolledCourses]);
+    fetch('http://localhost:5000/courses')
+      .then(res => res.json())
+      .then(data => setCourses(data));
 
-  const handleEnroll = (course) => {
-    setEnrolledCourses(prev => [...prev, { 
-      ...course,
-      enrollmentId: Date.now() // Unique ID for each enrollment
-    }]);
+    fetch(`http://localhost:5000/student_courses/${studentId}`)
+      .then(res => res.json())
+      .then(data => setEnrolledCourses(data));
+  }, [studentId]);
+
+  const handleEnroll = async (course) => {
+    const res = await fetch(`http://localhost:5000/enroll/${studentId}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(course)
+    });
+    if (res.ok) {
+      setEnrolledCourses(prev => [...prev, course]);
+    }
   };
 
-  const handleRemove = (enrollmentId) => {
-    setEnrolledCourses(prev => 
-      prev.filter(course => course.enrollmentId !== enrollmentId)
-    );
+  const handleRemove = async (course) => {
+    const res = await fetch(`http://localhost:5000/drop/${studentId}`, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(course)
+    });
+    if (res.ok) {
+      setEnrolledCourses(prev => prev.filter(c => c.id !== course.id));
+    }
   };
 
   return (
-    <div style={{ 
-      minHeight: '100vh', 
-      display: 'flex', 
-      flexDirection: 'column' 
-    }}>
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <Header />
-      
-      <div style={{ 
-        flex: 1,
-        display: 'flex',
-        padding: '20px',
-        gap: '30px'
-      }}>
+
+      <div style={{ flex: 1, display: 'flex', padding: '20px', gap: '30px' }}>
         <div style={{ flex: 3 }}>
           <h2 style={{ color: '#004080' }}>Available Courses</h2>
           <div style={{
@@ -59,7 +62,7 @@ const CoursesPage = () => {
             ))}
           </div>
         </div>
-        
+
         <EnrollmentList 
           enrolledCourses={enrolledCourses}
           onRemove={handleRemove}

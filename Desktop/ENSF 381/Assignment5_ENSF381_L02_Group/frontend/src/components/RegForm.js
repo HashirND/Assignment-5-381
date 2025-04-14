@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 
 const RegForm = () => {
   const [username, setUsername] = useState('');
@@ -7,34 +7,31 @@ const RegForm = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [email, setEmail] = useState('');
   const [errors, setErrors] = useState([]);
-  
+  const [statusMessage, setStatusMessage] = useState('');
+  const [isSuccess, setIsSuccess] = useState(false);
+
   const navigate = useNavigate();
 
-  // Validate all the inputs
   const validateForm = () => {
     const errorsArr = [];
 
-    // Username: between 3 and 20 characters, must start with a letter, allowed: alphanumeric, hyphens, underscores.
     const usernameRegex = /^[A-Za-z][A-Za-z0-9_-]{2,19}$/;
     if (!usernameRegex.test(username)) {
-      errorsArr.push('Username must be 3-20 characters long, start with a letter, and can only contain letters, numbers, hyphens, and underscores.');
+      errorsArr.push('Invalid username (Must be 3-20 characters, start with a letter, and can include letters, numbers, hyphens, underscores)');
     }
 
-    // Password: at least 8 characters, with at least one uppercase letter, one lowercase letter, one number, one special character, no spaces.
     const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()\-_=\+\[\]{}|;:'",.<>\/?`~])[A-Za-z\d!@#$%^&*()\-_=\+\[\]{}|;:'",.<>\/?`~]{8,}$/;
     if (!passwordRegex.test(password)) {
-      errorsArr.push('Password must be at least 8 characters long, include uppercase, lowercase, a number, and a special character, and contain no spaces.');
+      errorsArr.push('Invalid password (Must be at least 8 characters with upper, lower, number, special char)');
     }
 
-    // Confirm Password: Must match the password.
     if (password !== confirmPassword) {
-      errorsArr.push('Passwords do not match.');
+      errorsArr.push('Passwords do not match');
     }
 
-    // Email: Should have a valid format (e.g., username@example.com) with domain extensions like .com, .net, or .io
     const emailRegex = /^[^\s@]+@[^\s@]+\.(com|net|io)$/;
     if (!emailRegex.test(email)) {
-      errorsArr.push('Please enter a valid email (e.g., username@example.com) with .com, .net, or .io domain.');
+      errorsArr.push('Invalid email (e.g. user@example.com)');
     }
 
     setErrors(errorsArr);
@@ -43,10 +40,13 @@ const RegForm = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setErrors([]);
+    setStatusMessage('');
+    setIsSuccess(false);
+
     if (validateForm()) {
       const newUser = { username, password, email };
       try {
-        // Call the backend register API endpoint
         const response = await fetch('http://localhost:5000/register', {
           method: 'POST',
           headers: {
@@ -56,34 +56,20 @@ const RegForm = () => {
         });
         const data = await response.json();
         if (response.ok) {
-          // On success, redirect to the login page
-          navigate('/login');
+          setIsSuccess(true);
+          setStatusMessage('Signup successful! Redirecting to login...');
+          setTimeout(() => navigate('/login'), 1500);
         } else {
-          // If the API returns an error, e.g. username already exists
-          setErrors([data.message || 'Registration failed. Please try again.']);
+          setStatusMessage(data.message || 'Registration failed. Please try again.');
         }
       } catch (error) {
-        setErrors(['An error occurred. Please try again later.']);
+        setStatusMessage('An error occurred. Please try again later.');
       }
     }
   };
 
   return (
     <form onSubmit={handleSubmit}>
-      {errors.length > 0 && (
-        <div style={{
-          backgroundColor: '#f8d7da',
-          color: '#721c24',
-          padding: '10px',
-          borderRadius: '5px',
-          marginBottom: '15px'
-        }}>
-          {errors.map((err, idx) => (
-            <p key={idx} style={{ margin: '5px 0' }}>{err}</p>
-          ))}
-        </div>
-      )}
-      
       <div style={{ marginBottom: '15px' }}>
         <label htmlFor="username" style={{ display: 'block', marginBottom: '5px' }}>Username:</label>
         <input
@@ -95,7 +81,7 @@ const RegForm = () => {
           required
         />
       </div>
-      
+
       <div style={{ marginBottom: '15px' }}>
         <label htmlFor="password" style={{ display: 'block', marginBottom: '5px' }}>Password:</label>
         <input
@@ -107,7 +93,7 @@ const RegForm = () => {
           required
         />
       </div>
-      
+
       <div style={{ marginBottom: '15px' }}>
         <label htmlFor="confirmPassword" style={{ display: 'block', marginBottom: '5px' }}>Confirm Password:</label>
         <input
@@ -119,7 +105,7 @@ const RegForm = () => {
           required
         />
       </div>
-      
+
       <div style={{ marginBottom: '15px' }}>
         <label htmlFor="email" style={{ display: 'block', marginBottom: '5px' }}>Email:</label>
         <input
@@ -131,7 +117,7 @@ const RegForm = () => {
           required
         />
       </div>
-      
+
       <button type="submit" style={{
         backgroundColor: '#4CAF50',
         color: 'white',
@@ -143,17 +129,44 @@ const RegForm = () => {
         cursor: 'pointer',
         width: '100%'
       }}
-        onMouseEnter={(e) => { 
-          e.target.style.backgroundColor = '#45A049'; 
-          e.target.style.opacity = '1.0'; 
+        onMouseEnter={(e) => {
+          e.target.style.backgroundColor = '#45A049';
+          e.target.style.opacity = '1.0';
         }}
-        onMouseLeave={(e) => { 
-          e.target.style.backgroundColor = '#4CAF50'; 
-          e.target.style.opacity = '0.5'; 
+        onMouseLeave={(e) => {
+          e.target.style.backgroundColor = '#4CAF50';
+          e.target.style.opacity = '0.5';
         }}
       >
         Signup
       </button>
+
+      {(errors.length > 0 || statusMessage) && (
+  <div style={{
+    marginTop: '30px',
+    width: '250%',
+    marginLeft: '-75%',
+    border: '1px solid black',
+    padding: '10px',
+    textAlign: 'center'
+  }}>
+    {errors.length > 0
+      ? errors.map((err, idx) => (
+          <p key={idx} style={{ margin: 0 }}>{err}</p>
+        ))
+      : <p style={{ margin: 0 }}>{statusMessage}</p>
+    }
+  </div>
+)}
+
+
+<div style={{
+  marginTop: '15px',
+  textAlign: 'center'
+}}>
+  <Link to="/login">Already have an account? Login here</Link>
+</div>
+
     </form>
   );
 };

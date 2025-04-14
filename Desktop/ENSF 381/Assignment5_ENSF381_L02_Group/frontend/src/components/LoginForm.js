@@ -16,21 +16,23 @@ const LoginForm = () => {
     setError('');
 
     try {
-      const response = await fetch('https://jsonplaceholder.typicode.com/users');
-      const users = await response.json();
-      const validUser = users.find(u => u.username === username && u.email === password);
+      const response = await fetch('http://localhost:5000/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      });
 
-      if (validUser) {
-        login(validUser);
-        // Redirect after 2 seconds
-        setTimeout(() => {
-          navigate('/courses');
-        }, 2000);
+      const data = await response.json();
+
+      if (response.ok) {
+        localStorage.setItem('student_id', data.student_id); // Store student ID
+        login({ username }); // Call auth context
+        setTimeout(() => navigate('/courses'), 1000);
       } else {
-        setError('Invalid username or password!');
+        setError(data.message || 'Login failed');
       }
     } catch (err) {
-      setError('Failed to connect to the server. Please try again later.');
+      setError('Server error. Please try again later.');
     } finally {
       setIsLoading(false);
     }
@@ -67,19 +69,20 @@ const LoginForm = () => {
       </div>
 
       {error && (
-        <div style={{ 
-          color: '#D32F2F', 
-          backgroundColor: '#FFEBEE', 
-          padding: '10px', 
-          borderRadius: '4px',
-          marginBottom: '15px'
+        <div style={{
+          marginTop: '30px',
+          width: '250%',
+          marginLeft: '-75%',
+          border: '1px solid black',
+          padding: '10px',
+          textAlign: 'center'
         }}>
           {error}
         </div>
       )}
 
-      <button 
-        type="submit" 
+      <button
+        type="submit"
         disabled={isLoading}
         style={{
           width: '100%',
